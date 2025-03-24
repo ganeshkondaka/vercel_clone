@@ -9,7 +9,7 @@ export const getAllFiles = (folderPath: string) => {
         if (fs.statSync(fullFilePath).isDirectory()) {
             response = response.concat(getAllFiles(fullFilePath))
         } else {
-            response.push(fullFilePath);
+            response.push(fullFilePath.replace(/\\/g, '/'));
         }
     });
     return response;
