@@ -6,6 +6,9 @@ import path from "path";
 import { getAllFiles } from "./file";
 import { Uploadfile } from "./aws";
 import dotenv from "dotenv"
+import { createClient } from "redis"
+const publisher = createClient()
+publisher.connect()
 
 dotenv.config()
 
@@ -26,23 +29,25 @@ app.post('/deploy', async (req, res) => {
     const repoUrl = req.body.repoUrl;
     // console.log('repoUrl is :', repoUrl)
     const id = generate()
-    
+
     const normalizedDirname = __dirname.replace(/\\/g, '/');// replace all \ with /
 
     await simpleGit().clone(repoUrl, path.join(normalizedDirname, `output/${id}/`)) // so the running code is actually the code in dis folder so this path is referred to dist folder only , so from now the repos are stored in dist/output/id
 
     const files = getAllFiles(path.join(normalizedDirname, `output/${id}/frontend`)) // still the path are in backward slash . 
-    
-    files.map((item)=>{
+
+    files.map((item) => {
         item.replace(/\\/g, '/')
     })
     // console.log("__dirname :", __dirname)
     // console.log("__dirname replaced :", normalizedDirname)
     // console.log('files are :', files)
 
-    files.forEach(async file => {
-        Uploadfile(file.slice(normalizedDirname.length + 1), file)
-    })
+    // files.forEach(async file => {
+    //     Uploadfile(file.slice(normalizedDirname.length + 1), file)
+    // })
+
+    publisher.lPush('build-queue', id)
 
     res.json({
         id: id
